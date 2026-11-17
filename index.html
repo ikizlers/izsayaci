@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#0f1216">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<title>İz Sayacı</title>
+<style>
+:root{--bg:#0f1216;--card:#181d24;--line:#2a313b;--tx:#e8edf3;--mut:#8b97a6;--acc:#ffb400;--ok:#3ecf6e;--bad:#ff4d4d}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font-family:system-ui,Roboto,sans-serif}
+body{display:flex;flex-direction:column;padding:env(safe-area-inset-top) 12px env(safe-area-inset-bottom);gap:10px;max-width:520px;margin:0 auto}
+header{display:flex;justify-content:space-between;align-items:center;padding-top:8px;font-size:13px;color:var(--mut)}
+header b{color:var(--tx);font-size:18px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--bad);margin-right:6px}
+.dot.ok{background:var(--ok)}.dot.mid{background:var(--acc)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px}
+#big{text-align:center;flex:1;display:flex;flex-direction:column;justify-content:center;gap:4px}
+#big .lab{color:var(--mut);font-size:14px;letter-spacing:.08em;text-transform:uppercase}
+#big .num{font-size:96px;font-weight:800;line-height:1;color:var(--acc)}
+#big .sub{font-size:20px}
+#boxes{display:flex;gap:8px;justify-content:center;margin-top:10px}
+.box{width:44px;height:44px;border-radius:10px;border:2px solid var(--line);display:grid;place-items:center;font-weight:700;color:var(--mut)}
+.box.tram{border-color:var(--acc);color:var(--acc)}
+.box.cur{background:var(--acc);color:#000;border-color:var(--acc)}
+.box.cur.tram{background:var(--bad);border-color:var(--bad);color:#fff}
+#msg{text-align:center;font-size:14px;color:var(--mut);min-height:20px}
+#msg.warn{color:var(--acc)}
+.row{display:flex;gap:8px}
+button{flex:1;min-height:52px;border-radius:14px;border:1px solid var(--line);background:#202733;color:var(--tx);font-size:16px;font-weight:600}
+button:active{filter:brightness(1.3)}
+button.pri{background:var(--acc);color:#000;border:0}
+button.dng{background:#3a1d1d;color:#ffb3b3}
+button[disabled]{opacity:.35}
+#alert{position:fixed;inset:0;background:var(--bad);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:50;text-align:center;padding:20px}
+#alert.on{display:flex;animation:fl .6s infinite alternate}
+#alert h1{font-size:25vw;margin:0;color:#fff;line-height:1}
+#alert p{font-size:22px;color:#fff;margin:10px 0}
+@keyframes fl{from{background:#d62f2f}to{background:#ff6a3d}}
+#sheet,#fsheet,#isheet,#bsheet{position:fixed;inset:0;background:var(--bg);z-index:40;display:none;overflow:auto;padding:14px;max-width:520px;margin:0 auto}
+#sheet.on,#fsheet.on,#isheet.on,#bsheet.on{display:block}
+label{display:block;margin:14px 0 6px;color:var(--mut);font-size:14px}
+input[type=number],input[type=text],input[type=date],select{width:100%;min-height:50px;font-size:20px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--tx);padding:0 12px}
+.sw{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.sw input{width:26px;height:26px}
+small{color:var(--mut);display:block;margin-top:4px}
+
+#pages{flex:1;display:flex;flex-direction:column;gap:10px;min-height:0}
+#pgMain{flex:1;display:flex;flex-direction:column;gap:10px;min-height:0}
+#pgMap{flex:1;display:none;flex-direction:column;gap:10px;min-height:0;position:relative}
+body.map #pgMain{display:none}body.map #pgMap{display:flex}
+#mapWrap{flex:1;position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--line);background:#12161b;min-height:0}
+#map{position:absolute;inset:0;width:100%;height:100%;display:block}
+.mb{position:absolute;right:8px;width:46px;min-height:46px;border-radius:12px;font-size:22px;padding:0;background:#202733cc}
+#mInfo{position:absolute;left:10px;top:10px;font-size:14px;background:#0f1216cc;border-radius:10px;padding:6px 10px}
+nav{display:flex;gap:8px;padding-bottom:8px}
+nav button{min-height:46px}nav button.on{background:var(--acc);color:#000;border:0}
+.fl{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--line)}
+.fl .nm{flex:1}.fl .nm b{display:block}.fl .nm small{margin:0}
+.fl button{flex:none;min-height:40px;padding:0 12px;font-size:14px}
+.fl.act .nm b{color:var(--acc)}
+input[type=color]{width:64px;height:44px;border:1px solid var(--line);border-radius:10px;background:var(--card);padding:2px}
+#fieldBtn{flex:none;min-height:36px;padding:0 12px;font-size:14px;max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#nextBadge{position:fixed;top:calc(env(safe-area-inset-top) + 52px);left:50%;transform:translateX(-50%);z-index:30;display:none;background:var(--bad);color:#fff;font-weight:800;font-size:18px;padding:10px 18px;border-radius:999px;box-shadow:0 4px 18px #000a;animation:bl .5s infinite alternate;white-space:nowrap}
+#nextBadge.on{display:block}
+@keyframes bl{from{opacity:1}to{opacity:.25}}
+select{appearance:auto}
+</style>
+</head>
+<body>
+<header>
+  <button id="fieldBtn">Tarla ▾</button>
+  <div><span class="dot" id="gdot"></span><span id="gtxt">GPS bekleniyor</span></div>
+</header>
+
+<div id="pages">
+<div id="pgMain">
+<div id="big" class="card">
+  <div class="lab" id="lab">Önce A noktasını işaretle</div>
+  <div class="num" id="num">–</div>
+  <div class="sub" id="sub">Tarlaya gir, düz gitmeye başla</div>
+  <div id="boxes"></div>
+</div>
+<div id="msg"></div>
+
+<div class="row">
+  <button id="bA" class="pri">A NOKTASI</button>
+  <button id="bB" disabled>B (elle)</button>
+</div>
+<div class="row">
+  <button id="bMinus">− Sıra</button>
+  <button id="bTram">Bu iz sırası</button>
+  <button id="bPlus">+ Sıra</button>
+</div>
+<div class="row">
+  <button id="bSet">Ayarlar</button>
+  <button id="bReset" class="dng">Sıfırla</button>
+</div>
+
+</div>
+<div id="pgMap"><div id="mapWrap"><canvas id="map"></canvas><div id="mInfo"></div><button class="mb" id="mZ+" style="top:10px">+</button><button class="mb" id="mZ-" style="top:62px">−</button><button class="mb" id="mMode" style="top:114px;font-size:14px">Yön</button><button class="mb" id="mFit" style="top:166px;font-size:14px">Tüm</button></div></div>
+</div>
+<nav><button id="tMain" class="on">Sayaç</button><button id="tMap">Harita</button></nav>
+<div id="nextBadge">SONRAKİ SIRA: İZ AÇ!</div>
+<div id="alert"><h1>İZ AÇ!</h1><p id="alertSub">Bu sıra iz sırası</p><p>(kapatmak için dokun)</p></div>
+
+<div id="sheet">
+  <h2>Ayarlar</h2>
+  <label>Arkaya takılı alet (sıra genişliği bundan gelir)</label>
+  <div class="row"><div id="sImp" class="card" style="flex:2;display:flex;align-items:center"></div><button id="sImpBtn">Aletler</button></div>
+  <label>Püskürtme / iz aleti genişliği (m) — boş bırakırsan aşağıdan elle gir</label>
+  <input type="number" id="sSpr" step="0.5" min="0" max="60" placeholder="örn. 12">
+  <small id="sRatio"></small>
+  <label>Her kaç sırada bir iz</label>
+  <input type="number" id="sN" step="1" min="2" max="12">
+  <div class="sw"><span>Sesli uyarı</span><input type="checkbox" id="sSnd"></div>
+  <div class="sw"><span>Titreşim</span><input type="checkbox" id="sVib"></div>
+  <div class="sw"><span>Sıra atlamayı algıla<small>Kapalıysa her dönüş 1 sıra sayılır (daha kararlı)</small></span><input type="checkbox" id="sSkip"></div>
+  <label>Boyama rengi (normal sıra)</label><input type="color" id="sCol">
+  <label>Boyama rengi (iz sırası)</label><input type="color" id="sColT">
+  <div class="row" style="margin-top:18px"><button id="sTest">Sesi dene</button><button id="sOk" class="pri">Kaydet</button></div>
+</div>
+
+<div id="isheet" class="sheetx">
+  <h2>Aletler</h2>
+  <small>Arkaya takılan aletin adını ve çalışma genişliğini yaz. Seçilen alet sıra çizgilerini ve boyamayı belirler.</small>
+  <div id="iList"></div>
+  <div class="row" style="margin-top:16px"><button id="iAdd" class="pri">+ Yeni alet</button><button id="iClose">Kapat</button></div>
+</div>
+<div id="bsheet" class="sheetx">
+  <h2 id="bTitle">Tarla bilgisi</h2>
+  <label>Tarla adı</label><input type="text" id="bName">
+  <label>Ürün</label><input type="text" id="bUrun" placeholder="örn. Buğday">
+  <label>Tohum miktarı (kg/dekar)</label><input type="number" id="bTohum" step="0.5" min="0">
+  <label>Ekim tarihi</label><input type="date" id="bTarih">
+  <label>Alet</label><select id="bImp"></select>
+  <label>Not</label><input type="text" id="bNot">
+  <div class="row" style="margin-top:14px"><button id="bSave" class="pri">Kaydet</button><button id="bCloseB">Kapat</button></div>
+  <div class="row" style="margin-top:10px"><button id="bRep">Rapor</button><button id="bGpx">GPX</button><button id="bCsv">CSV</button></div>
+  <div class="row" style="margin-top:10px"><button id="bClr" class="dng">Boyamayı sil</button></div>
+  <div id="rep" class="card" style="margin-top:12px;display:none;line-height:1.6"></div>
+</div>
+<div id="fsheet" class="sheetx">
+  <h2>Tarlalar</h2>
+  <div id="fList"></div>
+  <div class="row" style="margin-top:16px"><button id="fAdd" class="pri">+ Yeni tarla</button><button id="fClose">Kapat</button></div>
+  <div class="row" style="margin-top:10px"><button id="fBackup">Yedek al</button><button id="fRestore">Yedek yükle</button></div>
+  <input type="file" id="fFile" accept=".json,application/json" style="display:none">
+</div>
+<script src="core.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>
